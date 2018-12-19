@@ -2,6 +2,7 @@
 using System.Collections;
 using System.IO;
 using System.Collections.Generic;
+using System.Timers;
 
 namespace SkeletonProgram
 {
@@ -582,6 +583,10 @@ namespace SkeletonProgram
             {
                 Console.WriteLine("You can't find " + itemToGet + ".");
             }
+            else if(checkInventory(items))
+            {
+                Console.WriteLine("Your inventory is full");
+            }
             else
             {
                 canGet = true;
@@ -648,6 +653,7 @@ namespace SkeletonProgram
             List<int> ListofIndicesOfItemsInInventory = new List<int>();
             List<string> ListOfNamesOfItemsInInventory = new List<string>();
             int Count = 0;
+            bool canTake = true;
             while (Count < items.Count)
             {
                 if (items[Count].Location == idOfOtherCharacter)
@@ -658,25 +664,36 @@ namespace SkeletonProgram
                 Count++;
             }
             Count = 1;
-            Console.Write("Which item do you want to take?  They have: ");
-            Console.Write(ListOfNamesOfItemsInInventory[0]);
-            while (Count < ListOfNamesOfItemsInInventory.Count - 1)
+            if(checkInventory(items))
             {
-                Console.Write(", " + ListOfNamesOfItemsInInventory[Count]);
-                Count++;
+                Console.WriteLine("You couldn't take anything...");
+                canTake = false;
             }
-            Console.WriteLine(".");
-            string ChosenItem = Console.ReadLine();
-            if (ListOfNamesOfItemsInInventory.Contains(ChosenItem))
+            while (canTake)
             {
-                Console.WriteLine("You have that now.");
-                int pos = ListOfNamesOfItemsInInventory.IndexOf(ChosenItem);
-                ChangeLocationOfItem(items, Convert.ToInt32(ListofIndicesOfItemsInInventory[pos]), Inventory);
+                Console.Write("Which item do you want to take?  They have: ");
+                Console.Write(ListOfNamesOfItemsInInventory[0]);
+                while (Count < ListOfNamesOfItemsInInventory.Count - 1)
+                {
+                    Console.Write(", " + ListOfNamesOfItemsInInventory[Count]);
+                    Count++;
+                }
+                Console.WriteLine(".");
+                string ChosenItem = Console.ReadLine();
+
+                if (ListOfNamesOfItemsInInventory.Contains(ChosenItem))
+                {
+                    Console.WriteLine("You have that now.");
+                    int pos = ListOfNamesOfItemsInInventory.IndexOf(ChosenItem);
+                    ChangeLocationOfItem(items, Convert.ToInt32(ListofIndicesOfItemsInInventory[pos]), Inventory);
+                }
+                else
+                {
+                    Console.WriteLine("They don't have that item, so you don't take anything this time.");
+                }
+                canTake = false;
             }
-            else
-            {
-                Console.WriteLine("They don't have that item, so you don't take anything this time.");
-            }
+
         }
 
         private static void TakeRandomItemFromPlayer(List<Item> items, int otherCharacterID)
@@ -707,6 +724,10 @@ namespace SkeletonProgram
             }
             else
             {
+                if(checkInventory(Items))
+                {
+                    Console.WriteLine("Your inventory is full so you won't be able to take anything");
+                }
                 position = GetPositionOfCommand(Items[indexOfPlayerDie].Commands, "use");
                 ResultForCommand = GetResultForCommand(Items[indexOfPlayerDie].Results, position);
                 playerScore = RollDie(ResultForCommand[5].ToString(), ResultForCommand[7].ToString());
@@ -989,9 +1010,41 @@ namespace SkeletonProgram
             }
         }
 
-        private static void FillItem(List<Item> items, string itemToFill, int currentLocation)
+        private static void FillItem(List<Item> items, string container, int currentLocation)
         {
-
+            int indexOfItem;
+            indexOfItem = GetIndexOfItem(container, -1, items);
+            if (indexOfItem == -1)
+            {
+                Console.WriteLine("You can't find " + container + " to fill.");
+            }
+            else if (items[indexOfItem].Location == Inventory && items[indexOfItem].Status.Contains("container"))
+            {
+                bool test = false;
+                int tempid = 0;
+                foreach (Item i in items)
+                {
+                    if (i.ID > 0)
+                        tempid = i.ID;
+                    if (i.Location == currentLocation && i.Status.Contains("water"))
+                    {
+                        test = true;
+                    }
+                }
+                if (test)
+                {
+                    Item temp = new Item();
+                    temp.ID = tempid + 1;
+                    temp.Location = items[indexOfItem].ID;
+                    temp.Description = "water";
+                    temp.Name = "water";
+                    temp.Status = "drinkable";
+                    items.Add(temp);
+                    Console.WriteLine(container + " now contains " + temp.Name);
+                }
+                else
+                    Console.WriteLine("You can't fill " + container + " here.");
+            }
         }
 
         private static void Attack(List<Item> items, List<Character> characters, string attackVictim)
@@ -1040,7 +1093,7 @@ namespace SkeletonProgram
         
         private static void DisplayPlayerInstructions(bool stopGame)
         {
-            if(stopGame)
+            if (stopGame)
             {
                 Console.WriteLine("You have completed the game with " + Instructions + " commands");
             }
@@ -1048,6 +1101,26 @@ namespace SkeletonProgram
             {
                 Console.WriteLine("You have done " + Instructions + " commands");
             }
+        }
+
+        private static bool checkInventory(List<Item> items)
+        {
+            bool isFull = false;
+            int itemsInInventory = 0;
+            int maxItems = 5;
+
+            foreach(Item i in items)
+            {
+                if(i.Location == Inventory)
+                {
+                    itemsInInventory++;
+                }
+            }
+            if(itemsInInventory > maxItems)
+            {
+                isFull = true;
+            }
+            return isFull;
         }
 
         private static bool LoadGame(string filename, List<Character> characters, List<Item> items, List<Place> places)
