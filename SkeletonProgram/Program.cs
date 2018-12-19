@@ -616,6 +616,25 @@ namespace SkeletonProgram
             }
         }
 
+        private static void DropItem(List<Item> items, string ItemToDrop, int currentLocation)
+        {
+            int indexOfItem = GetIndexOfItem(ItemToDrop, -1, items);
+
+            if (indexOfItem == -1)
+            {
+                Console.WriteLine("You can't find " + ItemToDrop + " to drop");
+            }
+            else if (items[indexOfItem].Location == Inventory)
+            {
+                ChangeLocationOfItem(items, indexOfItem, currentLocation);
+                Console.WriteLine("The item has been dropped");
+            }
+            else
+            {
+                Console.WriteLine("The item is not in your inventory");
+            }
+        }
+
         private static bool CheckIfDiceGamePossible(List<Item> items, List<Character> characters, ref int indexOfPlayerDie, ref int indexOfOtherCharacter, ref int indexOfOtherCharacterDie, string otherCharacterName)
         {
             bool playerHasDie = false, playersInSameRoom = false, otherCharacterHasDie = false;
@@ -900,6 +919,9 @@ namespace SkeletonProgram
                     case "get":
                         GetItem(items, instruction, characters[0].CurrentLocation, ref stopGame);
                         AddPlayerInstruction();
+                        break;
+                    case "drop":
+                        DropItem(items, instruction, characters[0].CurrentLocation);
                         break;
                     case "use":
                         UseItem(items, instruction, characters[0].CurrentLocation, ref stopGame, places);
